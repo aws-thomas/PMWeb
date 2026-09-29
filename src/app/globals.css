@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+/*
+ * Semantic color tokens, technicalplan.md section 11.10. Components use these
+ * names, never raw hex, so a later dark mode is one extra block here.
+ */
+@theme {
+  --color-canvas: #f6f7f9;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #eff1f4;
+  --color-border: #dde1e7;
+  --color-text: #16202b;
+  --color-text-muted: #5a6675;
+  --color-primary: #1d4ed8;
+  --color-danger: #b91c1c;
+}
+
+@theme inline {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-text);
+}

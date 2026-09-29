@@ -1,0 +1,45 @@
+# Markdown is local-only, with two exceptions: technicalplan.md, the
+# specification the code is built against, and README.md, which exists for
+# whoever clones the repository and is useless if it does not travel with it.
+*.md
+!technicalplan.md
+!README.md
+
+# Dependencies
+node_modules/
+
+# Next.js build output
+.next/
+out/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# Environment. .env.example is committed as the template; real values never are.
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+!.env.example
+
+# Database. The schema and its migrations are the durable asset, not the file.
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+prisma/*.db
+prisma/*.db-journal
+
+# Test and coverage output
+coverage/
+playwright-report/
+test-results/
+.vitest/
+
+# Editor and OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
