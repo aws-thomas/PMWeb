@@ -1,18 +1,33 @@
 @import "tailwindcss";
 
 /*
- * Semantic color tokens, technicalplan.md section 11.10. Components use these
- * names, never raw hex, so a later dark mode is one extra block here.
+ * Semantic color tokens, technicalplan.md section 11.10 and
+ * docs/plan/03-user-experience-and-interface.md section 5.1. Components use
+ * these names, never raw hex, so a later dark mode is one extra block here.
  */
 @theme {
   --color-canvas: #f6f7f9;
   --color-surface: #ffffff;
   --color-surface-sunken: #eff1f4;
   --color-border: #dde1e7;
+  --color-border-strong: #c3c9d2;
   --color-text: #16202b;
   --color-text-muted: #5a6675;
+  --color-text-subtle: #667180;
   --color-primary: #1d4ed8;
+  --color-primary-hover: #1e40af;
+  --color-primary-active: #1e3a8a;
+  --color-primary-tint: #eff6ff;
   --color-danger: #b91c1c;
+  --color-selection: #bfdbfe;
+
+  /* Project lifecycle. Always paired with the text label. */
+  --color-lifecycle-planning: #475569;
+  --color-lifecycle-active: #1d4ed8;
+  --color-lifecycle-on-hold: #92400e;
+  --color-lifecycle-complete: #15803d;
+
+  --shadow-card-hover: 0 2px 8px rgb(16 32 43 / 0.06);
 }
 
 @theme inline {
@@ -23,4 +38,26 @@
 body {
   background: var(--color-canvas);
   color: var(--color-text);
+  caret-color: var(--color-primary);
+  accent-color: var(--color-primary);
+}
+
+::selection {
+  background: var(--color-selection);
+  color: var(--color-text);
+}
+
+/* An empty native date field shows its format mask; mute it like a placeholder. */
+input[type="date"][data-empty="true"]::-webkit-datetime-edit {
+  color: var(--color-text-subtle);
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }

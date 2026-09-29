@@ -1,0 +1,27 @@
+// The durable asset. Every change goes through a committed migration.
+// CHECK constraints are hand-added to migration SQL because Prisma does not
+// model them on SQLite; src/server/schema-guard.test.ts fails if one is lost.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Project {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  name        String
+  description String?
+  lifecycle   String    @default("ACTIVE")
+  startOn     DateTime?
+  targetOn    DateTime?
+  archivedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([archivedAt])
+}

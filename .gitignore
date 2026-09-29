@@ -43,3 +43,12 @@ Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Generated Prisma client, rebuilt by npm install and prisma generate
+src/generated/
+
+# Per-run test databases
+.tmp/
+
+# Impeccable design review captures and working files
+.impeccable/

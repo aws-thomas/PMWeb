@@ -18,12 +18,12 @@ Where this document and a supporting document disagree, this document wins.
 The conflicts that were arbitrated are listed in section 2 so the reasoning is
 recoverable and does not get relitigated.
 
-Slice 0 was built on 2026-09-29: a runnable Next.js shell with no schema. Every
-schema, signature, and query below is still a design to be built and proved,
-not a description of something that runs.
+Slices 0 and 1 were built on 2026-09-29: the runnable shell, the Project model
+and first migration, the create form, and the dashboard list. Everything for
+later slices is still a design to be built and proved, not a description of
+something that runs.
 
-Status: Slice 0 done. Awaiting confirmation of the open items in section 15,
-then Slice 1.
+Status: Slices 0 and 1 done. Slice 2 next.
 
 ## IMPORTANT
 When making the UI/UX design use skills in this order: ui-ux-pro-max then impeccable then taste-skill
@@ -42,7 +42,7 @@ Decided 2026-09-16 and recorded in CLAUDE.md section 7.
 | Framework | Next.js, App Router, Server Components and Server Actions |
 | UI | React with Tailwind CSS |
 | Database | SQLite in development, PostgreSQL later |
-| Data access | Prisma ORM |
+| Data access | Prisma ORM 7 with the better-sqlite3 driver adapter |
 | Validation | zod, at the server boundary only |
 | Drag and drop | dnd-kit |
 | Testing | Vitest, React Testing Library, one Playwright spec |
@@ -358,7 +358,8 @@ database and logic that does not.
 | --- | --- | --- | --- |
 | Domain | src/lib/domain/ | Nothing but other domain modules | Prisma, React, Next, any I/O |
 | Service | src/server/services/ | Prisma, domain, zod schemas | React, anything from next/cache |
-| UI | src/app/, src/components/ | Domain types, server actions | Prisma, services directly |
+| Routes | src/app/ | Services, domain, server actions | Prisma directly |
+| Components | src/components/ | Domain types, server actions | Prisma, services, anything in src/server |
 
 The rule in one sentence: if logic can be written without touching the
 database, it belongs in the domain layer.
@@ -404,7 +405,8 @@ Only what the MVP needs. No speculative structure.
       tsconfig.json                 strict true, paths @/* to ./src/*
       next.config.ts                near-empty, no custom webpack
       eslint.config.mjs             next/core-web-vitals plus the import zones
-      vitest.config.mts             node environment; jsdom project added with the first component test
+      vitest.config.mts             node environment, non-UTC TZ; jsdom project added with the first component test
+      prisma.config.ts              Prisma 7 config: schema path, migrations path, DATABASE_URL
       docs/plan/                    the four specialist reviews
 
       prisma/
@@ -512,6 +514,31 @@ counts by projectId and status. The domain layer joins them into summaries and
 computes progress. A per-project query loop is the obvious wrong implementation
 here and is explicitly a defect under NFR-7.
 
+### 5.5 Implementation notes from Slice 1
+
+Facts learned while building, recorded so later slices do not rediscover them.
+
+- Prisma 7 differs from the version this plan was first written against. The
+  database URL lives in prisma.config.ts, not the schema; the generator is
+  prisma-client with an explicit output under src/generated (gitignored and
+  rebuilt by postinstall); SQLite needs the @prisma/adapter-better-sqlite3
+  driver adapter; and migrate dev no longer runs generate. The database file
+  resolves relative to the project root, so dev.db sits there.
+- Route files split from components in the layer table. Pages must call
+  service read functions (section 7.3) and actions must call service writes,
+  so src/app may import services; src/components may not. ESLint enforces both.
+- Pages that read the database call await connection() first. better-sqlite3
+  is synchronous, so without it Next prerenders the query once at build time.
+- Form actions return FormState, which echoes the submitted values. React resets
+  an uncontrolled form after its action returns, and without the echo a
+  validation error would wipe what the user typed.
+- The error summary lists each problem as a link to its field, because without
+  JavaScript nothing moves focus and the summary is the only route to the fix.
+- createProject redirects to the dashboard until the board exists in Slice 4,
+  when it should redirect to the new project's board.
+- server-only throws outside a React Server Components bundle, so Vitest
+  aliases it to an empty module; next build still enforces it.
+
 ---
 
 ## 6. Data model
@@ -521,12 +548,12 @@ here and is explicitly a defect under NFR-7.
     // prisma/schema.prisma
 
     generator client {
-      provider = "prisma-client-js"
+      provider = "prisma-client"
+      output   = "../src/generated/prisma"
     }
 
     datasource db {
       provider = "sqlite"
-      url      = env("DATABASE_URL")
     }
 
     model Project {
@@ -667,7 +694,7 @@ route error boundary. That distinction is the whole error strategy.
 
 ### 7.1 Project actions
 
-    createProject(prev: State, form: FormData): Promise<ActionResult<{ slug: string }>>
+    createProject(prev: FormState, form: FormData): Promise<FormState>
     updateProject(id: string, prev: State, form: FormData): Promise<ActionResult>
     archiveProject(id: string): Promise<ActionResult>
     restoreProject(id: string): Promise<ActionResult>
@@ -1102,27 +1129,24 @@ the seven were answered on 2026-09-16; the two that remain still gate Slice 1.
 4. **dueOn is a calendar day, not an instant.** CONFIRMED.
 5. **statusChangedAt is in scope.** CONFIRMED.
 
-### Still open, and still blocking the first migration
+### Confirmed by the developer on 2026-09-29
 
-6. **Slugs are immutable after creation.** Renaming a project would not change
-   its URL. If tidy URLs matter more than stable ones, this flips.
-   Recommendation: keep slugs immutable, because a URL that changes underneath a
-   bookmark is worse than a URL that no longer matches a renamed project.
-7. **The four promoted gaps in section 2.3.** Confirm that restore, delete
-   confirmation, the task detail view, and the enumerated value sets are all in
-   scope. Recommendation: yes to all four. Archive without restore is an
-   unlabelled soft delete, delete without confirmation has no undo behind it,
-   and the board rule in CLAUDE.md requires that something exists behind a card.
+6. **Slugs are immutable after creation.** CONFIRMED. Renaming a project does
+   not change its URL, because a URL that changes underneath a bookmark is worse
+   than a URL that no longer matches a renamed project. BR-15 stands as written.
+7. **The four promoted gaps in section 2.3.** CONFIRMED, all four: restore an
+   archived project, confirmation before delete, the task detail view, and the
+   enumerated value sets. Only the value sets touch the schema; the other three
+   are screens and server checks.
 
-Items 6 and 7 do not block Slice 0, which creates no schema. They block Slice 1.
+Nothing in this section remains open. Slice 1 is unblocked.
 
 ---
 
 ## 16. What the next session does
 
-1. Get answers to the two items still open in section 15: slug immutability and
-   the four promoted gaps.
-2. Then start Slice 1.
+1. Slice 2: project lifecycle. Edit, archive with undo, restore, type-the-name
+   delete, archived view.
 
 Do not start Slice 1 before those two are answered. The schema is the durable
 asset and it is the one thing that is expensive to change later.

@@ -14,8 +14,12 @@ The application runs locally only. It has no authentication, so it binds to
 
 ## Setup
 
-    npm install
     cp .env.example .env
+    npm install
+    npm run db:migrate
+
+npm install also generates the Prisma client. db:migrate creates dev.db in the
+project root and applies every migration.
 
 ## Run
 
@@ -30,8 +34,21 @@ Then open http://127.0.0.1:3000.
 | npm run dev | Start the development server on 127.0.0.1:3000 |
 | npm run build | Production build, including the TypeScript check |
 | npm run start | Serve the production build on 127.0.0.1:3000 |
-| npm run lint | Run ESLint over the project |
-| npm test | Run the Vitest suite once |
+| npm run lint | Run ESLint, including the layer boundary rules |
+| npm test | Run the Vitest suite once, against throwaway copies of the database |
+| npm run db:migrate | Apply migrations to dev.db, or create a new one after a schema change |
+| npm run db:generate | Regenerate the Prisma client after a schema change |
+
+## Changing the schema
+
+Prisma does not model CHECK constraints on SQLite, and any migration that
+rebuilds a table drops them. After running db:migrate with --create-only, paste
+the CONSTRAINT lines from the init migration back into any rebuilt CREATE TABLE
+before applying it. npm test fails if a constraint has gone missing.
+
+## Backup
+
+Stop the application and copy dev.db. There is no automated backup.
 
 ## Documentation
 
