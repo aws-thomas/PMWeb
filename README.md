@@ -32,7 +32,7 @@ Then open http://127.0.0.1:3000.
 | Command | What it does |
 | --- | --- |
 | npm run dev | Start the development server on 127.0.0.1:3000 |
-| npm run build | Production build, including the TypeScript check |
+| npm run build | Production build, including the TypeScript check. Deletes stale dev route types first |
 | npm run start | Serve the production build on 127.0.0.1:3000 |
 | npm run lint | Run ESLint, including the layer boundary rules |
 | npm test | Run the Vitest suite once, against throwaway copies of the database |
@@ -45,6 +45,14 @@ Prisma does not model CHECK constraints on SQLite, and any migration that
 rebuilds a table drops them. After running db:migrate with --create-only, paste
 the CONSTRAINT lines from the init migration back into any rebuilt CREATE TABLE
 before applying it. npm test fails if a constraint has gone missing.
+
+## Troubleshooting
+
+A page returns 404 in npm run dev although its file exists. Before changing
+anything, check whether the route appears in .next/dev/types/routes.d.ts and
+copy .next/dev/logs/next-development.log, which is overwritten on the next
+start. Then touch the page file, or stop the server, delete .next/dev, and
+start again. See technicalplan.md section 5.5.
 
 ## Backup
 

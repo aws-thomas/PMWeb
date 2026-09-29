@@ -538,6 +538,24 @@ Facts learned while building, recorded so later slices do not rediscover them.
   when it should redirect to the new project's board.
 - server-only throws outside a React Server Components bundle, so Vitest
   aliases it to an empty module; next build still enforces it.
+- npm run build deletes .next/dev/types first (the prebuild script). The dev
+  server writes .next/dev/types/validator.ts, which imports every page by
+  path, and Next adds that folder to tsconfig include and re-adds it if
+  removed. next build type-checks it, so deleting or renaming a page after a
+  dev run failed the build with TS2307 on a file that no longer exists, until
+  a dev server ran again. Reproduced and fixed on 2026-09-29. The build still
+  type-checks every current page through its own .next/types/validator.ts; a
+  planted type error in a page still fails it.
+- In dev, whether a page exists is decided in two places: the route table
+  built from Next's file watcher, which is also written to
+  .next/dev/types/routes.d.ts, and Turbopack's entrypoints, which come from
+  its on-disk cache in .next/dev/cache. A dev server once returned 404 for an
+  existing page until the file was touched. A faithful replay of the session
+  did not reproduce it. A watcher that cannot read a folder at startup drops
+  the route silently and does not recover even when the file is touched, so
+  that was not the cause; a stale Turbopack cache fits the symptoms but is
+  unproven. If it recurs, check routes.d.ts for the route before touching
+  anything: absent means the watcher lost it, present points at Turbopack.
 
 ---
 
