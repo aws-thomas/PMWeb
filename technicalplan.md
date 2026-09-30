@@ -23,7 +23,7 @@ and first migration, the create form, and the dashboard list. Everything for
 later slices is still a design to be built and proved, not a description of
 something that runs.
 
-Status: Slices 0 to 2 done. Slice 3 next.
+Status: Slices 0 to 3 done. Slice 4 next.
 
 ## IMPORTANT
 When making the UI/UX design use skills in this order: ui-ux-pro-max then impeccable then taste-skill
@@ -412,7 +412,7 @@ Only what the MVP needs. No speculative structure.
       prisma/
         schema.prisma               Project and Task, the durable asset
         migrations/                 generated, committed, never hand-edited blindly
-        seed.ts                     three projects, about 40 tasks, for demoing
+        seed.mts                    six projects, 50 tasks, every dashboard and board state
 
       e2e/
         mvp-happy-path.spec.ts      the single end-to-end spec, added in Slice 8
@@ -552,10 +552,28 @@ Facts learned while building, recorded so later slices do not rediscover them.
   :focus-visible outline beat every utility, so focus-visible:outline-none on
   the radio tiles and card links never applied.
 - Slice 2 departures from the UX review, both from the finish review: below
-  768px the breadcrumb shows Projects and the current page (the review said
-  the current page alone; Projects is the way back), and form buttons put
+  768px the breadcrumb shows the parent crumb and the current page (the review
+  said the project name; the parent is the way back, so a task page shows its
+  project; revised in Slice 3), and form buttons put
   Cancel first at every width so the tab order matches what is on screen (the
   review said primary on top on mobile).
+- Slice 3: the seed is prisma/seed.mts, run by `npm run db:seed` through
+  `prisma db seed`, which runs `tsx --conditions=react-server`. The .mts
+  extension makes it an ES module (the package is not "type": "module", so a
+  .ts file is CommonJS and cannot use top-level await); the react-server
+  condition lets it import the server-only services, so demo data obeys the
+  same rules as the app. It refuses a non-empty database. In Prisma 7,
+  `prisma migrate reset` does not run the seed (the CLI calls the seed runner
+  only from `db seed`), and it refuses to run when invoked by an AI agent
+  without the user's explicit consent.
+- Slice 3: SQLite enforces foreign keys through the better-sqlite3 adapter;
+  the BR-4 cascade test passes against the real database. Task writes carry
+  the archived check in the same statement (a relation filter in the update
+  and delete where clause) or in the same transaction (create).
+- Slice 3: the plain task list is ordered in the domain layer (compareForList:
+  column order, then BR-13), because SQLite sorts NULL due dates first.
+- Slice 3: overdue dates are not marked in the plain list; BRD-7 belongs to the
+  board in Slice 4.
 - npm run build deletes .next/dev/types first (the prebuild script). The dev
   server writes .next/dev/types/validator.ts, which imports every page by
   path, and Next adds that folder to tsconfig include and re-adds it if
@@ -756,10 +774,18 @@ list, and the project page.
 
 ### 7.2 Task actions
 
-    createTask(projectId: string, prev: State, form: FormData): Promise<ActionResult<{ id: string }>>
-    updateTask(taskId: string, prev: State, form: FormData): Promise<ActionResult>
-    deleteTask(taskId: string): Promise<ActionResult>
+As built in Slice 3 (moveTask arrives in Slice 4):
+
+    createTask(projectId: string, prev: FormState, form: FormData): Promise<FormState>
+    updateTask(taskId: string, prev: FormState, form: FormData): Promise<FormState>
+    deleteTask(taskId: string): Promise<FormState>
     moveTask(taskId: string, toStatus: TaskStatus): Promise<ActionResult>
+
+All three redirect to the project page; deleteTask adds ?deletedTask=<title>
+for the notice. The redirect slug is read from the database after the write,
+never taken from the request. The task form has no status field (developer
+decision, 2026-09-30); tasks start as New, and the service's optional status
+parameter exists for the board's per-column add (BR-14) and the seed.
 
 moveTask is the single entry point for a status change. Drag and drop and the
 explicit control both call it, which is why the keyboard path costs almost
@@ -767,8 +793,8 @@ nothing once drag exists, and why shipping the control first costs nothing
 either. It is idempotent: moving a task to the status it already has succeeds
 and writes nothing.
 
-Revalidation: all four revalidate the project board. createTask, deleteTask and
-moveTask also revalidate the dashboard, because they change its counts.
+Revalidation: every task action revalidates the dashboard and everything under
+the project's URL.
 
 ### 7.3 Read functions
 
@@ -1192,9 +1218,9 @@ Nothing in this section remains open. Slice 1 is unblocked.
 
 ## 16. What the next session does
 
-1. Slice 3: tasks exist. Task model and migration, task forms, task detail
-   view, delete confirmation, seed script. The delete-project copy gains the
-   task count, and the cascade (BR-4) gets its test.
+1. Slice 4: the kanban board with the accessible move control. Five columns,
+   counts, empty columns, card anatomy, summary line, Blocked treatment, the
+   native move control, moveTask, and BR-6 to BR-8 tested.
 
 Do not start Slice 1 before those two are answered. The schema is the durable
 asset and it is the one thing that is expensive to change later.

@@ -1,6 +1,5 @@
 import "server-only";
 import { db } from "@/db/client";
-import { Prisma } from "@/generated/prisma/client";
 import type { Project as ProjectRow } from "@/generated/prisma/client";
 import { toProjectLifecycle } from "@/lib/domain/lifecycle";
 import { isReservedSlug, slugify, withSuffix } from "@/lib/domain/slug";
@@ -10,21 +9,18 @@ import {
   ConfirmationMismatchError,
   NotFoundError,
 } from "@/server/errors";
+import { hasPrismaCode } from "@/server/services/db-errors";
 import type { ProjectInput } from "@/server/validation/project-input";
 
 function toProject(row: ProjectRow): Project {
   return { ...row, lifecycle: toProjectLifecycle(row.lifecycle) };
 }
 
-function hasCode(error: unknown, code: string): boolean {
-  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === code;
-}
-
 // Loads a project a write expected to find. A missing one was deleted, most
 // likely from another tab, and that must fail loudly (PER-4).
 async function requireProject(id: string): Promise<ProjectRow> {
   const row = await db.project.findUnique({ where: { id } });
-  if (!row) throw new NotFoundError("The project");
+  if (!row) throw new NotFoundError("project");
   return row;
 }
 
@@ -40,9 +36,15 @@ export async function createProject(input: ProjectInput): Promise<Project> {
       const row = await db.project.create({ data: { ...input, slug } });
       return toProject(row);
     } catch (error) {
-      if (!hasCode(error, "P2002")) throw error;
+      if (!hasPrismaCode(error, "P2002")) throw error;
     }
   }
+}
+
+// For redirects after a task write: the slug comes from the database, never
+// from the request.
+export async function projectSlugFor(id: string): Promise<string> {
+  return (await requireProject(id)).slug;
 }
 
 export async function getProjectBySlug(slug: string): Promise<Project | null> {
@@ -78,7 +80,7 @@ export async function updateProject(id: string, input: ProjectInput): Promise<Pr
     const row = await db.project.update({ where: { id, archivedAt: null }, data: input });
     return toProject(row);
   } catch (error) {
-    if (!hasCode(error, "P2025")) throw error;
+    if (!hasPrismaCode(error, "P2025")) throw error;
     await requireProject(id);
     throw new ArchivedProjectError();
   }

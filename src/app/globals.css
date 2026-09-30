@@ -22,6 +22,12 @@
   --color-danger-hover: #991b1b;
   --color-selection: #bfdbfe;
 
+  /* Task priority, a weight ladder rather than four hues (technicalplan 11.10):
+     Urgent solid, High tinted, Medium outlined, Low plain text. */
+  --color-priority-strong: #991b1b;
+  --color-priority-tint: #fee2e2;
+  --color-priority-tint-border: #fca5a5;
+
   /* Project lifecycle. Always paired with the text label. */
   --color-lifecycle-planning: #475569;
   --color-lifecycle-active: #1d4ed8;

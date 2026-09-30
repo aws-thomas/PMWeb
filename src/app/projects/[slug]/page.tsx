@@ -7,7 +7,9 @@ import { LifecycleBadge } from "@/components/projects/LifecycleBadge";
 import { ButtonLink } from "@/components/ui/Button";
 import { Notice } from "@/components/ui/Notice";
 import { SubmitButton } from "@/components/ui/SubmitButton";
+import { TaskList } from "@/components/tasks/TaskList";
 import { describeDateRange, formatLocalDay } from "@/lib/domain/dates";
+import { listTasksForProject } from "@/server/services/tasks";
 import { loadProject, projectPath } from "./load";
 
 export async function generateMetadata({ params }: PageProps<"/projects/[slug]">): Promise<Metadata> {
@@ -15,10 +17,14 @@ export async function generateMetadata({ params }: PageProps<"/projects/[slug]">
   return { title: `${project.name} - PMWeb` };
 }
 
-// The project page. Slice 4 adds the board here.
-export default async function ProjectPage({ params }: PageProps<"/projects/[slug]">) {
+// The project page. Slice 4 replaces the task list with the board.
+export default async function ProjectPage({ params, searchParams }: PageProps<"/projects/[slug]">) {
   await connection();
   const project = await loadProject((await params).slug);
+  const [tasks, { deletedTask }] = await Promise.all([
+    listTasksForProject(project.id),
+    searchParams,
+  ]);
   const dates = describeDateRange(project.startOn, project.targetOn);
   const { archivedAt } = project;
 
@@ -34,6 +40,11 @@ export default async function ProjectPage({ params }: PageProps<"/projects/[slug
     <>
       <SiteNav trail={trail} />
       <main id="main" className="mx-auto max-w-3xl px-4 pt-10 pb-16 md:px-6">
+        {typeof deletedTask === "string" && (
+          <div className="mb-8">
+            <Notice>{deletedTask} deleted.</Notice>
+          </div>
+        )}
         {archivedAt && (
           <div className="mb-8">
             <Notice
@@ -81,6 +92,29 @@ export default async function ProjectPage({ params }: PageProps<"/projects/[slug
             {project.description}
           </p>
         )}
+
+        <section aria-labelledby="tasks-heading" className="mt-10">
+          <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+            <h2 id="tasks-heading" className="text-lg font-semibold text-text">
+              Tasks{" "}
+              <span className="text-sm font-medium text-text-muted tabular-nums">({tasks.length})</span>
+            </h2>
+            {!archivedAt && (
+              <ButtonLink href={projectPath(project, "/tasks/new")}>New task</ButtonLink>
+            )}
+          </div>
+          {tasks.length > 0 ? (
+            <div className="mt-4">
+              <TaskList tasks={tasks} projectSlug={project.slug} />
+            </div>
+          ) : (
+            <p className="mt-4 rounded-lg border border-dashed border-border-strong px-5 py-8 text-center text-base text-text-muted">
+              {archivedAt
+                ? "This project has no tasks."
+                : "No tasks yet. Add the first one with New task."}
+            </p>
+          )}
+        </section>
 
         <div className="mt-12 border-t border-border pt-6">
           <Link

@@ -21,6 +21,15 @@ The application runs locally only. It has no authentication, so it binds to
 npm install also generates the Prisma client. db:migrate creates dev.db in the
 project root and applies every migration.
 
+To try the app with realistic demo data, run this against the empty database:
+
+    npm run db:seed
+
+The seed refuses to run if the database already has projects, so it never
+mixes demo data into real work. To start over with demo data only, run
+npm run db:reset (it asks for confirmation and deletes everything), then
+npm run db:seed.
+
 ## Run
 
     npm run dev
@@ -38,6 +47,8 @@ Then open http://127.0.0.1:3000.
 | npm test | Run the Vitest suite once, against throwaway copies of the database |
 | npm run db:migrate | Apply migrations to dev.db, or create a new one after a schema change |
 | npm run db:generate | Regenerate the Prisma client after a schema change |
+| npm run db:seed | Fill an empty database with six demo projects and their tasks |
+| npm run db:reset | Delete everything in dev.db and reapply the migrations; asks first |
 
 ## Changing the schema
 

@@ -17,21 +17,28 @@ export function SiteNav({ trail, action }: { trail: Crumb[]; action?: ReactNode 
         </Link>
         <span aria-hidden="true" className="h-5 w-px bg-border" />
         <nav aria-label="Breadcrumb" className="min-w-0 flex-1">
-          {/* Below 768px only the first and current crumbs show (UX spec 8.4
-              keeps just the current one; Projects stays as the way back). The
-              current crumb takes the remaining width and ends in an ellipsis
-              rather than wrapping. */}
+          {/* Below 768px only the parent and current crumbs show, so every
+              page keeps a one-tap way up a level (UX spec 8.4 keeps the
+              project name). Long crumbs end in an ellipsis rather than
+              wrapping. */}
           <ol className="flex items-center gap-2 text-sm">
             {trail.map((crumb, index) => {
               const current = index === trail.length - 1;
-              const middle = index > 0 && !current;
+              const parent = index === trail.length - 2;
               return (
                 <li
                   key={crumb.label}
-                  className={`items-center gap-2 ${middle ? "hidden min-w-0 md:flex" : "flex"} ${index === 0 ? "shrink-0" : "min-w-0"}`}
+                  // The current crumb gives up space first: it repeats the page
+                  // heading, while the parent is the way back.
+                  className={`items-center gap-2 ${current || parent ? "flex" : "hidden md:flex"} ${index === 0 ? "shrink-0" : "min-w-0"} ${current ? "shrink-[4]" : ""}`}
                 >
                   {index > 0 && (
-                    <span aria-hidden="true" className="shrink-0 text-text-subtle">/</span>
+                    <span
+                      aria-hidden="true"
+                      className={`shrink-0 text-text-subtle ${parent ? "hidden md:inline" : ""}`}
+                    >
+                      /
+                    </span>
                   )}
                   {crumb.href && !current ? (
                     <Link

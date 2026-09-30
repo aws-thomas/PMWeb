@@ -23,5 +23,26 @@ model Project {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
+  tasks Task[]
+
   @@index([archivedAt])
+}
+
+model Task {
+  id              String    @id @default(cuid())
+  projectId       String
+  title           String
+  description     String?
+  status          String    @default("NEW")
+  priority        Int       @default(20)
+  dueOn           DateTime?
+  statusChangedAt DateTime  @default(now())
+  completedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, status])
+  @@index([projectId, dueOn])
 }

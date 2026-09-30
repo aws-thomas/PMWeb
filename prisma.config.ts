@@ -8,6 +8,11 @@ if (existsSync(".env")) process.loadEnvFile(".env");
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
-  migrations: { path: "prisma/migrations" },
+  migrations: {
+    path: "prisma/migrations",
+    // react-server lets the seed import the server-only service layer, so
+    // demo data goes through the same rules as the app.
+    seed: "tsx --conditions=react-server prisma/seed.mts",
+  },
   datasource: { url: process.env.DATABASE_URL },
 });

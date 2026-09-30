@@ -1,20 +1,7 @@
 import { z } from "zod";
 import { PROJECT_LIFECYCLES } from "@/lib/domain/lifecycle";
-import { isCalendarDateString, toCalendarDate } from "@/lib/domain/dates";
 import { PROJECT_DESCRIPTION_MAX, PROJECT_NAME_MAX } from "@/lib/domain/limits";
-
-const tooLong = (label: string, max: number) => ({
-  error: (issue: { input?: unknown }) =>
-    `${label} must be ${max} characters or fewer. You have ${String(issue.input).length}.`,
-});
-
-const calendarDateField = z
-  .string()
-  .trim()
-  .refine((value) => value === "" || isCalendarDateString(value), {
-    error: "Enter a valid date.",
-  })
-  .transform((value) => (value === "" ? null : toCalendarDate(value)));
+import { calendarDateField, optionalText, tooLong } from "./fields";
 
 export const projectInputSchema = z
   .object({
@@ -23,11 +10,7 @@ export const projectInputSchema = z
       .trim()
       .min(1, { error: "Enter a project name." })
       .max(PROJECT_NAME_MAX, tooLong("Project name", PROJECT_NAME_MAX)),
-    description: z
-      .string()
-      .trim()
-      .max(PROJECT_DESCRIPTION_MAX, tooLong("Description", PROJECT_DESCRIPTION_MAX))
-      .transform((value) => (value === "" ? null : value)),
+    description: optionalText("Description", PROJECT_DESCRIPTION_MAX),
     lifecycle: z.enum(PROJECT_LIFECYCLES, {
       error: "Choose a project state from the list.",
     }),

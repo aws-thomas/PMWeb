@@ -52,3 +52,55 @@ describe("Project table constraints", () => {
     ).rejects.toThrow(/Project_dates_check/);
   });
 });
+
+describe("Task table constraints", () => {
+  async function projectId(): Promise<string> {
+    return (await db.project.create({ data: { name: "P", slug: "p" } })).id;
+  }
+
+  test.each([
+    "Task_status_check",
+    "Task_priority_check",
+    "Task_title_check",
+    "Task_completedAt_check",
+    "Task_projectId_fkey",
+  ])("%s still exists", async (name) => {
+    expect(await tableSql("Task")).toContain(`CONSTRAINT "${name}"`);
+  });
+
+  test("the database refuses an unknown status or priority", async () => {
+    const id = await projectId();
+    await expect(
+      db.task.create({ data: { projectId: id, title: "T", status: "ARCHIVED" } }),
+    ).rejects.toThrow(/Task_status_check/);
+    await expect(
+      db.task.create({ data: { projectId: id, title: "T", priority: 25 } }),
+    ).rejects.toThrow(/Task_priority_check/);
+  });
+
+  test("the database refuses a blank or overlong title", async () => {
+    const id = await projectId();
+    await expect(db.task.create({ data: { projectId: id, title: "  " } })).rejects.toThrow(
+      /Task_title_check/,
+    );
+    await expect(
+      db.task.create({ data: { projectId: id, title: "t".repeat(201) } }),
+    ).rejects.toThrow(/Task_title_check/);
+  });
+
+  test("completedAt is set exactly when the status is Done", async () => {
+    const id = await projectId();
+    await expect(
+      db.task.create({ data: { projectId: id, title: "T", status: "DONE" } }),
+    ).rejects.toThrow(/Task_completedAt_check/);
+    await expect(
+      db.task.create({ data: { projectId: id, title: "T", status: "TODO", completedAt: new Date() } }),
+    ).rejects.toThrow(/Task_completedAt_check/);
+  });
+
+  test("a task cannot point at a project that does not exist", async () => {
+    await expect(
+      db.task.create({ data: { projectId: "cm0missingproject000000000", title: "T" } }),
+    ).rejects.toThrow();
+  });
+});

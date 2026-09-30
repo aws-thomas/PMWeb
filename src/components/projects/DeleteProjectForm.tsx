@@ -1,9 +1,8 @@
 "use client";
 
 import { useActionState, useEffect, useRef } from "react";
-import { ButtonLink } from "@/components/ui/Button";
 import { Field, inputClasses } from "@/components/ui/Field";
-import { SubmitButton } from "@/components/ui/SubmitButton";
+import { FormActions, FormProblems } from "@/components/ui/Form";
 import type { FormState } from "@/lib/result";
 
 // The delete button stays enabled rather than unlocking only once the name
@@ -25,14 +24,7 @@ export function DeleteProjectForm({
 
   return (
     <form action={formAction} noValidate className="flex flex-col gap-6">
-      {state?.message && (
-        <p
-          role="alert"
-          className="rounded-md border border-danger/30 bg-danger/5 px-4 py-3 text-sm font-medium text-danger"
-        >
-          {state.message}
-        </p>
-      )}
+      <FormProblems state={state} fieldOrder={[]} />
 
       <Field
         id="confirmation"
@@ -53,14 +45,12 @@ export function DeleteProjectForm({
         )}
       </Field>
 
-      {/* Cancel comes first in the markup at every width, so the tab order
-          always matches what is on screen; the primary action sits last. */}
-      <div className="flex flex-col gap-3 border-t border-border pt-6 sm:flex-row sm:justify-end">
-        <ButtonLink href={cancelHref} variant="secondary">
-          Cancel
-        </ButtonLink>
-        <SubmitButton variant="danger" label="Delete project" pendingLabel="Deleting..." />
-      </div>
+      <FormActions
+        cancelHref={cancelHref}
+        variant="danger"
+        submitLabel="Delete project"
+        pendingLabel="Deleting..."
+      />
     </form>
   );
 }
