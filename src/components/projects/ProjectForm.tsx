@@ -1,16 +1,16 @@
 "use client";
 
 import { type ChangeEvent, useActionState, useEffect, useRef } from "react";
-import { useFormStatus } from "react-dom";
-import { createProject } from "@/app/projects/actions";
-import { ButtonLink, buttonClasses } from "@/components/ui/Button";
+import { ButtonLink } from "@/components/ui/Button";
 import { Field, inputClasses } from "@/components/ui/Field";
+import { SubmitButton } from "@/components/ui/SubmitButton";
 import {
   DEFAULT_LIFECYCLE,
   LIFECYCLE_LABELS,
   PROJECT_LIFECYCLES,
 } from "@/lib/domain/lifecycle";
 import { PROJECT_DESCRIPTION_MAX, PROJECT_NAME_MAX } from "@/lib/domain/limits";
+import type { FormState } from "@/lib/result";
 
 // Summary order follows the form, so the list reads top to bottom like the page.
 const FIELD_ORDER = ["name", "description", "lifecycle", "startOn", "targetOn"];
@@ -28,25 +28,25 @@ function markEmpty(event: ChangeEvent<HTMLInputElement>) {
   event.currentTarget.dataset.empty = String(event.currentTarget.value === "");
 }
 
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      aria-busy={pending}
-      className={`${buttonClasses("primary")} min-w-36`}
-    >
-      {pending ? "Creating..." : "Create project"}
-    </button>
-  );
-}
-
-export function ProjectForm() {
-  const [state, formAction] = useActionState(createProject, null);
+// Create and edit share this form; the page supplies the action, the starting
+// values, and the words on the buttons.
+export function ProjectForm({
+  action,
+  initial = {},
+  submitLabel,
+  pendingLabel,
+  cancelHref,
+}: {
+  action: (previous: FormState, form: FormData) => Promise<FormState>;
+  initial?: Record<string, string>;
+  submitLabel: string;
+  pendingLabel: string;
+  cancelHref: string;
+}) {
+  const [state, formAction] = useActionState(action, null);
   const formRef = useRef<HTMLFormElement>(null);
   const errors = state?.fieldErrors ?? {};
-  const values = state?.values ?? {};
+  const values = state?.values ?? initial;
   const problems = FIELD_ORDER.flatMap((field) => {
     const message = errors[field]?.[0];
     return message ? [{ field, message }] : [];
@@ -64,6 +64,15 @@ export function ProjectForm() {
 
   return (
     <form ref={formRef} action={formAction} noValidate className="flex flex-col gap-8">
+      {state?.message && (
+        <p
+          role="alert"
+          className="rounded-md border border-danger/30 bg-danger/5 px-4 py-3 text-sm font-medium text-danger"
+        >
+          {state.message}
+        </p>
+      )}
+
       {problems.length > 0 && (
         // Each problem links to its field: without JavaScript nothing moves
         // focus, and this list is the only route from the summary to the fix.
@@ -188,11 +197,13 @@ export function ProjectForm() {
         </Field>
       </div>
 
-      <div className="flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:justify-end">
-        <ButtonLink href="/" variant="secondary">
+      {/* Cancel comes first in the markup at every width, so the tab order
+          always matches what is on screen; the primary action sits last. */}
+      <div className="flex flex-col gap-3 border-t border-border pt-6 sm:flex-row sm:justify-end">
+        <ButtonLink href={cancelHref} variant="secondary">
           Cancel
         </ButtonLink>
-        <SubmitButton />
+        <SubmitButton label={submitLabel} pendingLabel={pendingLabel} />
       </div>
     </form>
   );

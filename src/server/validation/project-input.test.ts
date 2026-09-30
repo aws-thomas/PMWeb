@@ -1,6 +1,10 @@
 import { describe, expect, test } from "vitest";
 import { z } from "zod";
-import { projectInputSchema } from "./project-input";
+import {
+  deleteConfirmationSchema,
+  projectInputSchema,
+  restoreDestinationSchema,
+} from "./project-input";
 
 const valid = {
   name: "Client website",
@@ -102,5 +106,31 @@ describe("projectInputSchema", () => {
     expect(projectInputSchema.safeParse({ ...valid, startOn: "2026-06-30", targetOn: "2026-06-30" }).success).toBe(true);
     expect(projectInputSchema.safeParse({ ...valid, startOn: "2026-06-30" }).success).toBe(true);
     expect(projectInputSchema.safeParse({ ...valid, targetOn: "2020-01-01" }).success).toBe(true);
+  });
+});
+
+describe("deleteConfirmationSchema", () => {
+  test("trims the typed name", () => {
+    expect(deleteConfirmationSchema.parse({ confirmation: "  Client website  " })).toEqual({
+      confirmation: "Client website",
+    });
+  });
+
+  test.each(["", "   "])("asks for the name when %j is typed", (confirmation) => {
+    const result = deleteConfirmationSchema.safeParse({ confirmation });
+    expect(result.success).toBe(false);
+    expect(result.error && z.flattenError(result.error).fieldErrors.confirmation).toEqual([
+      "Type the project name to confirm.",
+    ]);
+  });
+});
+
+describe("restoreDestinationSchema", () => {
+  test.each(["dashboard", "archived", "project"])("accepts %j", (value) => {
+    expect(restoreDestinationSchema.parse(value)).toBe(value);
+  });
+
+  test.each(["/", "https://example.com", "Dashboard", ""])("rejects %j", (value) => {
+    expect(restoreDestinationSchema.safeParse(value).success).toBe(false);
   });
 });

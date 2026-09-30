@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { slugify, withSuffix } from "./slug";
+import { isReservedSlug, slugify, withSuffix } from "./slug";
 
 describe("slugify", () => {
   test.each([
@@ -29,5 +29,15 @@ describe("withSuffix", () => {
     expect(withSuffix("website", 1)).toBe("website");
     expect(withSuffix("website", 2)).toBe("website-2");
     expect(withSuffix("website", 10)).toBe("website-10");
+  });
+});
+
+describe("isReservedSlug", () => {
+  test.each(["new", "archived"])("reserves %j, which a fixed route already uses", (slug) => {
+    expect(isReservedSlug(slug)).toBe(true);
+  });
+
+  test.each(["new-2", "archived-2", "news", "client-website"])("allows %j", (slug) => {
+    expect(isReservedSlug(slug)).toBe(false);
   });
 });

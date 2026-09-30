@@ -17,25 +17,33 @@ export function SiteNav({ trail, action }: { trail: Crumb[]; action?: ReactNode 
         </Link>
         <span aria-hidden="true" className="h-5 w-px bg-border" />
         <nav aria-label="Breadcrumb" className="min-w-0 flex-1">
+          {/* Below 768px only the first and current crumbs show (UX spec 8.4
+              keeps just the current one; Projects stays as the way back). The
+              current crumb takes the remaining width and ends in an ellipsis
+              rather than wrapping. */}
           <ol className="flex items-center gap-2 text-sm">
             {trail.map((crumb, index) => {
               const current = index === trail.length - 1;
+              const middle = index > 0 && !current;
               return (
-                <li key={crumb.label} className="flex min-w-0 items-center gap-2">
+                <li
+                  key={crumb.label}
+                  className={`items-center gap-2 ${middle ? "hidden min-w-0 md:flex" : "flex"} ${index === 0 ? "shrink-0" : "min-w-0"}`}
+                >
                   {index > 0 && (
-                    <span aria-hidden="true" className="text-text-subtle">/</span>
+                    <span aria-hidden="true" className="shrink-0 text-text-subtle">/</span>
                   )}
                   {crumb.href && !current ? (
                     <Link
                       href={crumb.href}
-                      className="text-text-muted underline-offset-4 hover:text-text hover:underline"
+                      className="min-w-0 truncate text-text-muted underline-offset-4 hover:text-text hover:underline"
                     >
                       {crumb.label}
                     </Link>
                   ) : (
                     <span
                       aria-current={current ? "page" : undefined}
-                      className="truncate font-medium text-text"
+                      className="min-w-0 truncate font-medium text-text"
                     >
                       {crumb.label}
                     </span>

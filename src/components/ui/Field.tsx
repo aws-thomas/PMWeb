@@ -45,4 +45,4 @@ export function Field({
 }
 
 export const inputClasses =
-  "h-11 w-full rounded-md border border-border-strong bg-surface px-3 text-base text-text placeholder:text-text-subtle transition-colors duration-150 hover:border-text-subtle aria-invalid:border-danger aria-invalid:shadow-[0_0_0_3px_rgb(185_28_28/0.12)] sm:h-10 sm:text-sm";
+  "h-11 w-full rounded-md border border-border-strong bg-surface px-3 text-base text-text placeholder:text-text-subtle transition-colors duration-150 hover:border-text-subtle aria-invalid:border-danger aria-invalid:shadow-[0_0_0_3px_rgb(185_28_28/0.12)] aria-invalid:focus-visible:outline-danger sm:h-10 sm:text-sm";

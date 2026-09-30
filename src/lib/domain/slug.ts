@@ -16,6 +16,14 @@ export function slugify(name: string): string {
   return base.length > 0 ? base : "project";
 }
 
+// Fixed routes that sit beside /projects/[slug]. A project slugged "new" would
+// be shadowed by the create page and could never be opened.
+const RESERVED_SLUGS = new Set(["new", "archived"]);
+
+export function isReservedSlug(slug: string): boolean {
+  return RESERVED_SLUGS.has(slug);
+}
+
 export function withSuffix(base: string, attempt: number): string {
   return attempt === 1 ? base : `${base}-${attempt}`;
 }

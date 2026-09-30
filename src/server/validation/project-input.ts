@@ -45,3 +45,13 @@ export const projectInputSchema = z
   });
 
 export type ProjectInput = z.infer<typeof projectInputSchema>;
+
+export const deleteConfirmationSchema = z.object({
+  confirmation: z.string().trim().min(1, { error: "Type the project name to confirm." }),
+});
+
+// Where to land after a restore. A fixed set rather than a path taken from
+// the request, so a crafted form cannot redirect anywhere else.
+export const RESTORE_DESTINATIONS = ["dashboard", "archived", "project"] as const;
+export type RestoreDestination = (typeof RESTORE_DESTINATIONS)[number];
+export const restoreDestinationSchema = z.enum(RESTORE_DESTINATIONS);

@@ -23,7 +23,7 @@ and first migration, the create form, and the dashboard list. Everything for
 later slices is still a design to be built and proved, not a description of
 something that runs.
 
-Status: Slices 0 and 1 done. Slice 2 next.
+Status: Slices 0 to 2 done. Slice 3 next.
 
 ## IMPORTANT
 When making the UI/UX design use skills in this order: ui-ux-pro-max then impeccable then taste-skill
@@ -538,6 +538,24 @@ Facts learned while building, recorded so later slices do not rediscover them.
   when it should redirect to the new project's board.
 - server-only throws outside a React Server Components bundle, so Vitest
   aliases it to an empty module; next build still enforces it.
+- Slice 2: the slugs "new" and "archived" are reserved, because those fixed
+  routes sit beside /projects/[slug]. A project named New gets new-2.
+- Slice 2: dashboard and archived-list notices come from query parameters
+  (archived, deleted, missing, restored). The archive and restore notices are
+  checked against the database, so a stale link never offers an Undo that
+  would do nothing.
+- Slice 2: instants such as archivedAt are shown with formatLocalDay, in the
+  server's timezone, which is the user's while PMWeb is local-only. Calendar
+  days keep formatCalendarDate in UTC. Node 24's British English data writes
+  September as "Sept"; that is kept.
+- Slice 2: the base CSS rules sit in @layer base. Unlayered, the global
+  :focus-visible outline beat every utility, so focus-visible:outline-none on
+  the radio tiles and card links never applied.
+- Slice 2 departures from the UX review, both from the finish review: below
+  768px the breadcrumb shows Projects and the current page (the review said
+  the current page alone; Projects is the way back), and form buttons put
+  Cancel first at every width so the tab order matches what is on screen (the
+  review said primary on top on mobile).
 - npm run build deletes .next/dev/types first (the prebuild script). The dev
   server writes .next/dev/types/validator.ts, which imports every page by
   path, and Next adds that folder to tsconfig include and re-adds it if
@@ -712,19 +730,29 @@ route error boundary. That distinction is the whole error strategy.
 
 ### 7.1 Project actions
 
+As built in Slice 2. The id and destination are bound on the server page
+with .bind; forms post everything else.
+
     createProject(prev: FormState, form: FormData): Promise<FormState>
-    updateProject(id: string, prev: State, form: FormData): Promise<ActionResult>
-    archiveProject(id: string): Promise<ActionResult>
-    restoreProject(id: string): Promise<ActionResult>
-    deleteProject(id: string, confirmationName: string): Promise<ActionResult>
+    updateProject(id: string, prev: FormState, form: FormData): Promise<FormState>
+    archiveProject(id: string): Promise<void>
+    restoreProject(id: string, destination: "dashboard" | "archived" | "project"): Promise<void>
+    deleteProject(id: string, prev: FormState, form: FormData): Promise<FormState>
 
-deleteProject compares confirmationName against the stored name on the server
-and refuses if they differ. The confirmation is a server-side rule, not a
-client-side dialog that can be skipped.
+createProject and updateProject redirect to the project page. archiveProject
+redirects to /?archived=<slug>, where the dashboard offers Undo.
+restoreProject redirects to the dashboard, to the archived list with a
+restored notice, or to the project page, chosen from a fixed set so a crafted
+form cannot redirect elsewhere. deleteProject reads the typed name from the
+confirmation field and compares it with the stored name inside the delete
+statement itself (BR-5); the confirmation is a server-side rule, not a
+client-side dialog that can be skipped. It redirects to /?deleted=<name>.
 
-Revalidation: createProject, archiveProject, restoreProject and deleteProject
-revalidate the dashboard. updateProject revalidates the dashboard and the
-project board.
+Archive and restore are plain buttons with nowhere to show an error, so a
+project deleted meanwhile sends them to /?missing=1 instead (PER-4).
+
+Revalidation: every project action revalidates the dashboard, the archived
+list, and the project page.
 
 ### 7.2 Task actions
 
@@ -803,7 +831,7 @@ These live in the service layer and hold regardless of the interface.
 | ID | Rule |
 | --- | --- |
 | BR-1 | Archiving a project sets archivedAt and touches no task. Tasks keep their status. |
-| BR-2 | An archived project and its tasks are read-only. Every write action refuses while archivedAt is set. |
+| BR-2 | An archived project and its tasks are read-only. Every edit to the project or its tasks refuses while archivedAt is set. Restore and permanent delete remain available (developer decision, 2026-09-29). |
 | BR-3 | Restoring a project clears archivedAt and restores writability. Nothing else changes. |
 | BR-4 | Deleting a project deletes every one of its tasks by database cascade. |
 | BR-5 | Deleting a project requires the submitted name to match the stored name exactly. |
@@ -890,8 +918,9 @@ records the decisions that constrain implementation.
 | Dashboard | / |
 | Archived projects | /projects/archived |
 | New project | /projects/new |
-| Project board | /projects/[slug] |
+| Project page, becomes the board in Slice 4 | /projects/[slug] |
 | Edit project | /projects/[slug]/edit |
+| Delete project confirmation | /projects/[slug]/delete |
 | Task detail | /projects/[slug]/tasks/[taskId] |
 
 ### 11.2 Label casing
@@ -1163,8 +1192,9 @@ Nothing in this section remains open. Slice 1 is unblocked.
 
 ## 16. What the next session does
 
-1. Slice 2: project lifecycle. Edit, archive with undo, restore, type-the-name
-   delete, archived view.
+1. Slice 3: tasks exist. Task model and migration, task forms, task detail
+   view, delete confirmation, seed script. The delete-project copy gains the
+   task count, and the cascade (BR-4) gets its test.
 
 Do not start Slice 1 before those two are answered. The schema is the durable
 asset and it is the one thing that is expensive to change later.

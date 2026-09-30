@@ -19,6 +19,7 @@
   --color-primary-active: #1e3a8a;
   --color-primary-tint: #eff6ff;
   --color-danger: #b91c1c;
+  --color-danger-hover: #991b1b;
   --color-selection: #bfdbfe;
 
   /* Project lifecycle. Always paired with the text label. */
@@ -35,29 +36,35 @@
     "Segoe UI", Roboto, Arial, sans-serif;
 }
 
-body {
-  background: var(--color-canvas);
-  color: var(--color-text);
-  caret-color: var(--color-primary);
-  accent-color: var(--color-primary);
-}
+/*
+ * Base rules live in the base layer so Tailwind utilities can override them;
+ * an unlayered rule would beat every utility, focus-visible:outline-none included.
+ */
+@layer base {
+  body {
+    background: var(--color-canvas);
+    color: var(--color-text);
+    caret-color: var(--color-primary);
+    accent-color: var(--color-primary);
+  }
 
-::selection {
-  background: var(--color-selection);
-  color: var(--color-text);
-}
+  ::selection {
+    background: var(--color-selection);
+    color: var(--color-text);
+  }
 
-/* An empty native date field shows its format mask; mute it like a placeholder. */
-input[type="date"][data-empty="true"]::-webkit-datetime-edit {
-  color: var(--color-text-subtle);
-}
+  /* An empty native date field shows its format mask; mute it like a placeholder. */
+  input[type="date"][data-empty="true"]::-webkit-datetime-edit {
+    color: var(--color-text-subtle);
+  }
 
-input[type="date"]::-webkit-calendar-picker-indicator {
-  cursor: pointer;
-  opacity: 0.6;
-}
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.6;
+  }
 
-:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
 }

@@ -38,3 +38,27 @@ const displayFormat = new Intl.DateTimeFormat("en-GB", {
 export function formatCalendarDate(date: Date): string {
   return displayFormat.format(date);
 }
+
+// A project's planned span in words. "From", not "Started": a start date may
+// still be in the future, and the wording must stay true without knowing today.
+export function describeDateRange(startOn: Date | null, targetOn: Date | null): string | null {
+  if (startOn && targetOn) {
+    return `${formatCalendarDate(startOn)} to ${formatCalendarDate(targetOn)}`;
+  }
+  if (startOn) return `From ${formatCalendarDate(startOn)}`;
+  if (targetOn) return `Target ${formatCalendarDate(targetOn)}`;
+  return null;
+}
+
+// For instants such as archivedAt, the day they fell on where the app runs.
+// The app is local-only, so the server's timezone is the user's. Revisit if
+// PMWeb is ever hosted.
+const localDayFormat = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+});
+
+export function formatLocalDay(instant: Date): string {
+  return localDayFormat.format(instant);
+}

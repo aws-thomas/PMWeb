@@ -1,6 +1,8 @@
 import { describe, expect, test } from "vitest";
 import {
+  describeDateRange,
   formatCalendarDate,
+  formatLocalDay,
   fromCalendarDate,
   isCalendarDateString,
   toCalendarDate,
@@ -41,10 +43,33 @@ describe("toCalendarDate and fromCalendarDate", () => {
   test("formats for display without shifting the day", () => {
     expect(formatCalendarDate(toCalendarDate("2026-03-10"))).toBe("10 Mar 2026");
     expect(formatCalendarDate(toCalendarDate("2026-01-01"))).toBe("1 Jan 2026");
+    // British English abbreviates September to four letters; every other month has three.
+    expect(formatCalendarDate(toCalendarDate("2026-09-30"))).toBe("30 Sept 2026");
   });
 
   test("survive a local day boundary that differs from UTC", () => {
     // Late evening in Los Angeles is already the next day in UTC.
     expect(fromCalendarDate(toCalendarDate("2026-12-31"))).toBe("2026-12-31");
+  });
+});
+
+describe("formatLocalDay", () => {
+  test("shows an instant on the day it fell in the process timezone", () => {
+    // 03:00 UTC on 1 Oct is still 30 Sep in Los Angeles, where the suite runs.
+    expect(formatLocalDay(new Date("2026-10-01T03:00:00Z"))).toBe("30 Sept 2026");
+  });
+});
+
+describe("describeDateRange", () => {
+  const start = toCalendarDate("2026-03-10");
+  const target = toCalendarDate("2026-06-30");
+
+  test.each([
+    ["both dates", start, target, "10 Mar 2026 to 30 Jun 2026"],
+    ["only a start", start, null, "From 10 Mar 2026"],
+    ["only a target", null, target, "Target 30 Jun 2026"],
+    ["neither", null, null, null],
+  ])("describes %s", (_label, startOn, targetOn, expected) => {
+    expect(describeDateRange(startOn, targetOn)).toBe(expected);
   });
 });
