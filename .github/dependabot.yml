@@ -16,6 +16,15 @@ updates:
       minor-and-patch:
         patterns: ["*"]
         update-types: ["minor", "patch"]
+    ignore:
+      # Types follow the Node runtime, which is 24 locally and in CI.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+      # Blocked inside eslint-config-next; remove once Next.js supports them.
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /

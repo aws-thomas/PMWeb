@@ -1,0 +1,32 @@
+name: Open pull request
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - "dependabot/**"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  open-pr:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Open a pull request into main if this branch has none
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          open=$(gh pr list --head "$BRANCH" --state open --json number --jq length)
+          if [ "$open" -eq 0 ]; then
+            gh pr create --base main --head "$BRANCH" --fill
+          else
+            echo "Branch $BRANCH already has an open pull request."
+          fi
